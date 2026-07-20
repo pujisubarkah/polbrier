@@ -1,0 +1,4 @@
+file_path,substansi_kebijakan,metode_riset,analisis_kebijakan,saran_kebijakan,regulasi_legislasi
+./dataset/policy_brief_1.pdf,85,78,80,90,75
+./dataset/policy_brief_2.pdf,70,65,75,70,60
+./dataset/policy_brief_3.pdf,90,88,85,92,80
