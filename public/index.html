@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PolBrief Assessor — Penilaian Berbasis Kata Kunci</title>
+  <meta name="description" content="Platform penilaian otomatis dokumen Policy Brief berdasarkan 5 indikator substansi kebijakan dengan grade A–E. Data-driven, instan, terpercaya." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="index.css" />
+</head>
+<body>
+
+  <!-- ===== TOP BAR ===== -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <span class="topbar-label">🔴 LIVE</span>
+      <span class="topbar-text">Platform Penilaian Policy Brief · Analisis Otomatis Berbasis Indikator Kebijakan · Grading A–E</span>
+    </div>
+  </div>
+
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+        </div>
+        <div class="logo-text-wrap">
+          <span class="logo-text">PolBrief<span class="logo-accent">Assessor</span></span>
+          <span class="logo-sub">Data & Policy Analytics</span>
+        </div>
+      </div>
+      <nav class="header-nav">
+        <a href="#tentang" class="nav-link">Tentang</a>
+        <a href="#indikator" class="nav-link">Indikator</a>
+        <a href="#upload-section" class="nav-link nav-cta">Nilai Sekarang →</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===== HERO DASHBOARD ===== -->
+  <section class="hero-dashboard">
+    <div class="hero-grid">
+
+      <!-- LEFT: Headline + Upload CTA -->
+      <div class="hero-left">
+        <div class="hero-eyebrow">
+          <span class="live-dot"></span>
+          Platform Penilaian Kebijakan
+        </div>
+        <h1 class="hero-title">Penilaian Policy Brief<br />Berdasarkan <span class="highlight">Kata Kunci</span></h1>
+        <p class="hero-sub">Upload dokumen PDF Anda dan dapatkan analisis instan berdasarkan <strong>frekuensi kata kunci</strong> yang relevan dengan 5 elemen kompetensi.</p>
+        <div class="hero-actions">
+          <a href="#upload-section" class="btn-primary">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+            Upload PDF & Nilai
+          </a>
+          <a href="#indikator" class="btn-ghost">Lihat Indikator</a>
+        </div>
+      </div>
+
+      <!-- RIGHT: Dashboard Cards -->
+      <div class="hero-right">
+
+        <!-- Stat Cards Row 1 -->
+        <div class="stat-grid">
+          <div class="stat-card stat-blue">
+            <div class="stat-icon">📋</div>
+            <div class="stat-num" data-target="5">0</div>
+            <div class="stat-label">Indikator Penilaian</div>
+          </div>
+          <div class="stat-card stat-cyan">
+            <div class="stat-icon">⚡</div>
+            <div class="stat-num" data-target="5" data-suffix="dtk">&lt;5dtk</div>
+            <div class="stat-label">Waktu Analisis</div>
+          </div>
+          <div class="stat-card stat-green">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-num" data-target="100" data-suffix="%">0%</div>
+            <div class="stat-label">Akurasi Ekstraksi</div>
+          </div>
+          <div class="stat-card stat-orange">
+            <div class="stat-icon">🏆</div>
+            <div class="stat-num">A–E</div>
+            <div class="stat-label">Skala Grade</div>
+          </div>
+        </div>
+
+        <!-- Grade Distribution Infographic -->
+        <div class="grade-infographic">
+          <div class="grade-infographic-header">
+            <span class="gi-title">Distribusi Grade Penilaian</span>
+            <span class="gi-sub">Standar Penilaian Policy Brief</span>
+          </div>
+          <div class="grade-bars">
+            <div class="grade-bar-item">
+              <span class="gb-label">A</span>
+              <div class="gb-track"><div class="gb-fill" style="--w:85%;--c:#22c55e;" data-w="85%"></div></div>
+              <span class="gb-range">85–100</span>
+              <span class="gb-desc">Sangat Baik</span>
+            </div>
+            <div class="grade-bar-item">
+              <span class="gb-label">B</span>
+              <div class="gb-track"><div class="gb-fill" style="--w:70%;--c:#38bdf8;" data-w="70%"></div></div>
+              <span class="gb-range">70–84</span>
+              <span class="gb-desc">Baik</span>
+            </div>
+            <div class="grade-bar-item">
+              <span class="gb-label">C</span>
+              <div class="gb-track"><div class="gb-fill" style="--w:55%;--c:#eab308;" data-w="55%"></div></div>
+              <span class="gb-range">55–69</span>
+              <span class="gb-desc">Cukup</span>
+            </div>
+            <div class="grade-bar-item">
+              <span class="gb-label">D</span>
+              <div class="gb-track"><div class="gb-fill" style="--w:40%;--c:#f97316;" data-w="40%"></div></div>
+              <span class="gb-range">40–54</span>
+              <span class="gb-desc">Kurang</span>
+            </div>
+            <div class="grade-bar-item">
+              <span class="gb-label">E</span>
+              <div class="gb-track"><div class="gb-fill" style="--w:20%;--c:#ef4444;" data-w="20%"></div></div>
+              <span class="gb-range">0–39</span>
+              <span class="gb-desc">Sangat Kurang</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== DATA STRIP ===== -->
+  <section class="data-strip">
+    <div class="strip-inner">
+      <div class="strip-item">
+        <span class="strip-num">20%</span>
+        <span class="strip-label">Bobot Identifikasi Masalah</span>
+      </div>
+      <div class="strip-div">|</div>
+      <div class="strip-item">
+        <span class="strip-num">25%</span>
+        <span class="strip-label">Bobot Analisis & Bukti</span>
+      </div>
+      <div class="strip-div">|</div>
+      <div class="strip-item">
+        <span class="strip-num">25%</span>
+        <span class="strip-label">Bobot Rekomendasi</span>
+      </div>
+      <div class="strip-div">|</div>
+      <div class="strip-item">
+        <span class="strip-num">15%</span>
+        <span class="strip-label">Bobot Struktur Penulisan</span>
+      </div>
+      <div class="strip-div">|</div>
+      <div class="strip-item">
+        <span class="strip-num">15%</span>
+        <span class="strip-label">Bobot Relevansi & Dampak</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== INDIKATOR SECTION ===== -->
+  <section id="indikator" class="indicators-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">📊 5 INDIKATOR PENILAIAN</div>
+        <h2 class="section-title">Framework Penilaian Policy Brief</h2>
+        <p class="section-sub">Setiap indikator dinilai secara independen dan dikombinasikan secara tertimbang untuk menghasilkan nilai akhir yang komprehensif.</p>
+      </div>
+
+      <div class="indicator-cards">
+        <div class="ind-card">
+          <div class="ind-number">01</div>
+          <div class="ind-icon" style="background:rgba(14,165,233,0.15);color:#38bdf8">📌</div>
+          <h3 class="ind-title">Identifikasi & Urgensi Masalah</h3>
+          <p class="ind-desc">Seberapa jelas dan mendesak masalah kebijakan diidentifikasi dalam dokumen.</p>
+          <div class="ind-weight">
+            <div class="iw-bar" style="--w:20%;--c:#38bdf8"></div>
+            <span>Bobot 20%</span>
+          </div>
+        </div>
+
+        <div class="ind-card">
+          <div class="ind-number">02</div>
+          <div class="ind-icon" style="background:rgba(34,197,94,0.15);color:#22c55e">📊</div>
+          <h3 class="ind-title">Kualitas Analisis & Bukti</h3>
+          <p class="ind-desc">Kelengkapan data empiris, referensi ilmiah, dan kualitas analisis yang disajikan.</p>
+          <div class="ind-weight">
+            <div class="iw-bar" style="--w:25%;--c:#22c55e"></div>
+            <span>Bobot 25%</span>
+          </div>
+        </div>
+
+        <div class="ind-card">
+          <div class="ind-number">03</div>
+          <div class="ind-icon" style="background:rgba(234,179,8,0.15);color:#eab308">💡</div>
+          <h3 class="ind-title">Rekomendasi Kebijakan</h3>
+          <p class="ind-desc">Kejelasan, kelayakan, dan relevansi rekomendasi kebijakan yang ditawarkan.</p>
+          <div class="ind-weight">
+            <div class="iw-bar" style="--w:25%;--c:#eab308"></div>
+            <span>Bobot 25%</span>
+          </div>
+        </div>
+
+        <div class="ind-card">
+          <div class="ind-number">04</div>
+          <div class="ind-icon" style="background:rgba(249,115,22,0.15);color:#f97316">📝</div>
+          <h3 class="ind-title">Struktur & Kejelasan</h3>
+          <p class="ind-desc">Organisasi dokumen, alur penulisan, dan keterbacaan secara keseluruhan.</p>
+          <div class="ind-weight">
+            <div class="iw-bar" style="--w:15%;--c:#f97316"></div>
+            <span>Bobot 15%</span>
+          </div>
+        </div>
+
+        <div class="ind-card">
+          <div class="ind-number">05</div>
+          <div class="ind-icon" style="background:rgba(168,85,247,0.15);color:#a855f7">🎯</div>
+          <h3 class="ind-title">Relevansi & Dampak</h3>
+          <p class="ind-desc">Relevansi isu dengan agenda kebijakan dan potensi dampak dari solusi yang diusulkan.</p>
+          <div class="ind-weight">
+            <div class="iw-bar" style="--w:15%;--c:#a855f7"></div>
+            <span>Bobot 15%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MAIN UPLOAD ===== -->
+  <main class="main" id="tentang">
+    <div class="container">
+
+      <!-- Upload Section -->
+      <section id="upload-section" class="upload-section">
+        <div class="upload-wrapper">
+          <div class="upload-left">
+            <div class="section-tag">⬆ UNGGAH DOKUMEN</div>
+            <h2 class="upload-title">Nilai Policy Brief<br />Anda Sekarang</h2>
+            <p class="upload-desc">Unggah file PDF policy brief dan sistem kami akan menganalisis berdasarkan 5 indikator penilaian secara otomatis.</p>
+            <div class="upload-features">
+              <div class="uf-item"><span class="uf-check">✓</span> Analisis teks otomatis</div>
+              <div class="uf-item"><span class="uf-check">✓</span> 5 indikator dinilai sekaligus</div>
+              <div class="uf-item"><span class="uf-check">✓</span> Grade A–E per indikator</div>
+              <div class="uf-item"><span class="uf-check">✓</span> Radar chart visualisasi</div>
+              <div class="uf-item"><span class="uf-check">✓</span> Rekomendasi perbaikan</div>
+            </div>
+          </div>
+
+          <div class="upload-right">
+            <div class="card upload-card">
+              <div id="drop-zone" class="drop-zone" onclick="document.getElementById('file-input').click()">
+                <input type="file" id="file-input" accept=".pdf" hidden />
+                <div class="drop-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.338-2.32 3 3 0 010 5.096A4.5 4.5 0 0117.25 19.5H6.75z"/>
+                  </svg>
+                </div>
+                <div class="drop-text">
+                  <span class="drop-title">Drag & Drop PDF di sini</span>
+                  <span class="drop-sub">atau <u>klik untuk memilih file</u></span>
+                </div>
+                <div class="drop-info">Format: PDF · Maksimal 20 MB</div>
+              </div>
+
+              <div id="file-preview" class="file-preview hidden">
+                <div class="file-info">
+                  <div class="file-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                    </svg>
+                  </div>
+                  <div class="file-meta">
+                    <span id="file-name" class="file-name">—</span>
+                    <span id="file-size" class="file-size">—</span>
+                  </div>
+                  <button id="remove-file" class="remove-btn" title="Hapus file">
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <button id="assess-btn" class="assess-btn" disabled>
+                <span class="btn-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                  </svg>
+                </span>
+                Mulai Penilaian
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Loading -->
+      <div id="loading" class="loading-section hidden">
+        <div class="loading-card">
+          <div class="loading-header">
+            <div class="spinner-ring"></div>
+            <div>
+              <div class="loading-title">Menganalisis Dokumen...</div>
+              <div class="loading-sub">Sistem sedang memproses 5 indikator penilaian</div>
+            </div>
+          </div>
+          <div class="loading-steps">
+            <div class="step active" id="step-1">📄 Membaca dokumen PDF</div>
+            <div class="step" id="step-2">🔍 Mengekstrak teks konten</div>
+            <div class="step" id="step-3">⚖️ Menilai 5 indikator</div>
+            <div class="step" id="step-4">📊 Menyusun laporan akhir</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div id="error-section" class="error-section hidden">
+        <div class="error-card">
+          <div class="error-icon">⚠️</div>
+          <h3 class="error-title">Gagal Menilai Dokumen</h3>
+          <p id="error-msg" class="error-msg"></p>
+          <button onclick="resetApp()" class="retry-btn">Coba Lagi</button>
+        </div>
+      </div>
+
+      <!-- ===== HASIL PENILAIAN ===== -->
+      <section id="result-section" class="result-section hidden">
+
+        <!-- Result Header Dashboard -->
+        <div class="result-dashboard">
+          <div class="rd-left">
+            <div class="section-tag">📋 HASIL PENILAIAN</div>
+            <div id="res-filename" class="rd-filename"></div>
+            <div class="rd-meta">
+              <span id="res-wordcount"></span>
+              <span class="rd-sep">·</span>
+              <span id="res-date"></span>
+            </div>
+          </div>
+          <div class="rd-grade-block">
+            <div class="rd-grade-ring" id="grade-ring">
+              <div class="rd-grade-inner">
+                <div id="final-grade-letter" class="rd-grade-letter">—</div>
+                <div id="final-score-text" class="rd-grade-score">0/100</div>
+              </div>
+            </div>
+            <div class="rd-grade-info">
+              <div id="final-grade-label" class="rd-grade-label">—</div>
+              <div class="rd-grade-sublabel">Nilai Akhir</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scorecard Row -->
+        <div class="scorecard-row" id="scorecard-row"></div>
+
+        <!-- Summary -->
+        <div class="summary-card">
+          <div class="summary-icon">💬</div>
+          <div>
+            <div class="summary-heading">Kesimpulan Penilaian</div>
+            <p id="result-summary" class="summary-text"></p>
+          </div>
+        </div>
+
+        <!-- Strengths & Weaknesses -->
+        <div class="sw-grid">
+          <div class="sw-card sw-strength-card">
+            <div class="sw-header">
+              <span class="sw-dot sw-dot-green"></span>
+              <h4 class="sw-title">Kekuatan Utama</h4>
+            </div>
+            <ul id="strengths-list" class="sw-list strength-list"></ul>
+          </div>
+          <div class="sw-card sw-weakness-card">
+            <div class="sw-header">
+              <span class="sw-dot sw-dot-orange"></span>
+              <h4 class="sw-title">Perlu Ditingkatkan</h4>
+            </div>
+            <ul id="weaknesses-list" class="sw-list weakness-list"></ul>
+          </div>
+        </div>
+
+        <!-- Chart + Detail -->
+        <div class="assessment-grid">
+          <div class="chart-card">
+            <h3 class="card-title">Radar Indikator</h3>
+            <div class="chart-wrapper">
+              <canvas id="radar-chart"></canvas>
+            </div>
+          </div>
+          <div class="indicators-card">
+            <h3 class="card-title">Detail Per Indikator</h3>
+            <div id="indicator-list" class="indicator-list"></div>
+          </div>
+        </div>
+
+        <div class="reset-section">
+          <button onclick="resetApp()" class="reset-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Nilai Dokumen Lain
+          </button>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="footer-logo">PolBrief<span style="color:var(--primary-light)">Assessor</span></span>
+          <span class="footer-tagline">Data & Policy Analytics Platform</span>
+        </div>
+        <div class="footer-stats">
+          <span>5 Indikator</span>
+          <span class="footer-sep">·</span>
+          <span>Grade A–E</span>
+          <span class="footer-sep">·</span>
+          <span>Analisis Otomatis</span>
+        </div>
+        <p class="footer-copy">&copy; 2026 PolBrief Assessor</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
