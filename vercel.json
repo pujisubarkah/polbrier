@@ -1,13 +1,1 @@
-{
-  "functions": {
-    "server/index.js": {
-      "memory": 512,
-      "maxDuration": 30,
-      "includeFiles": "node_modules/pdfjs-dist/**"
-    }
-  },
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/server/index.js" },
-    { "source": "/(.*)", "destination": "/public/$1" }
-  ]
-}
+{"functions":{"api/index.js":{"memory":512,"maxDuration":30,"includeFiles":"node_modules/pdfjs-dist/**"}},"rewrites":[{"source":"/api/(.*)","destination":"/api/index.js"},{"source":"/(.*)","destination":"/public/$1"}]}

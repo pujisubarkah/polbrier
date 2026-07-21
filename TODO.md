@@ -55,11 +55,17 @@ an # TODO: Perbaikan Error Vercel + Upgrade PDF Parser
 - **Tested ✅:** Server berjalan di `localhost:3000`, PDF parsing sukses mengekstrak teks  
   "Hello World Policy Brief!" dari PDF minimal.
 
+### Step 10 ✅ Fix Vercel Serverless Functions Path Error
+- **Problem:** Error `"server/index.js" defined in functions doesn't match any Serverless Functions inside the api directory`
+- **Root Cause:** Vercel requires Serverless Functions to live inside an `api/` directory at the project root
+- **Fix:** Created `api/index.js` as a thin serverless entry point that imports the Express app from `server/index.js`
+- **Fix:** Updated `vercel.json` to reference `api/index.js` instead of `server/index.js` in both `functions` and `rewrites`
+
 ## ⬜ Not Yet Started
 
-### Step 10 ⬜ Test upload PDF asli via browser
+### Step 11 ⬜ Test upload PDF asli via browser
 - Buka `http://localhost:3000` dan upload PDF policy brief asli
 
-### Step 11 ⬜ Deploy ke Vercel
+### Step 12 ⬜ Deploy ke Vercel
 - `vercel --prod` atau deploy via Vercel dashboard
 
