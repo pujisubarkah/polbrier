@@ -229,6 +229,9 @@ function renderResult(data) {
   indList.innerHTML = "";
   data.indicators.forEach(ind => indList.appendChild(buildIndicatorItem(ind)));
 
+  // Competency cards
+  renderCompetencies(data.competencies);
+
   // Radar chart
   buildRadarChart(data.indicators);
 
@@ -258,12 +261,176 @@ function buildIndicatorItem(ind) {
   return el;
 }
 
+// ===== COMPETENCY CARDS =====
+function renderCompetencies(competencies) {
+  const grid = document.getElementById("competency-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
+
+  const order = [
+    { key: "analytical_core", icon: "🧠", label: "Analisis Inti" },
+    { key: "analytical_specialist", icon: "💡", label: "Analisis Spesialis" },
+    { key: "political_core", icon: "⚖️", label: "Politis Inti" }
+  ];
+
+  order.forEach(({ key, icon, label }) => {
+    const comp = competencies[key];
+    if (!comp) return;
+
+    const card = document.createElement("div");
+    card.className = "competency-card";
+
+    // Header with grade badge
+    const header = document.createElement("div");
+    header.className = "competency-card-header";
+    header.innerHTML = `
+      <div class="competency-card-title">${icon} ${comp.shortLabel || comp.label}</div>
+      <div class="competency-card-badge">
+        <div class="competency-card-grade" style="color:${comp.color}">${comp.grade}</div>
+        <div class="competency-card-label" style="color:${comp.color}">${comp.gradeLabel}</div>
+      </div>
+    `;
+    card.appendChild(header);
+
+    // Description
+    const desc = document.createElement("div");
+    desc.className = "competency-card-desc";
+    desc.textContent = comp.description;
+    card.appendChild(desc);
+
+    // Score bar
+    const barBg = document.createElement("div");
+    barBg.className = "competency-card-bar-bg";
+    const barFill = document.createElement("div");
+    barFill.className = "competency-card-bar-fill";
+    barFill.style.background = comp.color;
+    barFill.style.width = "0%";
+    barBg.appendChild(barFill);
+    card.appendChild(barBg);
+
+    // Stats row
+    const stats = document.createElement("div");
+    stats.className = "competency-card-stats";
+    stats.innerHTML = `
+      <div class="competency-card-stat">
+        <span class="competency-card-stat-label">Skor</span>
+        <span class="competency-card-stat-value">${comp.score}<small>/100</small></span>
+      </div>
+      <div class="competency-card-stat">
+        <span class="competency-card-stat-label">Rubrik</span>
+        <span class="competency-card-stat-value" style="color:${comp.color}">Level ${comp.rubricLevel}</span>
+      </div>
+      <div class="competency-card-stat">
+        <span class="competency-card-stat-label">Grade</span>
+        <span class="competency-card-stat-value" style="color:${comp.color}">${comp.grade}</span>
+      </div>
+    `;
+    card.appendChild(stats);
+
+    // Elements
+    if (comp.elements && comp.elements.length > 0) {
+      const elementsDiv = document.createElement("div");
+      elementsDiv.className = "competency-elements";
+      comp.elements.forEach(el => {
+        const elRow = document.createElement("div");
+        elRow.className = "competency-element";
+        elRow.innerHTML = `
+          <span class="competency-element-dot" style="background:${el.color}"></span>
+          <span class="competency-element-name">${el.label}</span>
+          <span class="competency-element-score">${el.score}<small>/100</small></span>
+        `;
+        elementsDiv.appendChild(elRow);
+      });
+      card.appendChild(elementsDiv);
+    }
+
+    grid.appendChild(card);
+
+    // Animate bar after mount
+    setTimeout(() => {
+      barFill.style.width = `${comp.score}%`;
+    }, 400);
+  });
+}
+
 // ===== RADAR CHART =====
 function buildRadarChart(indicators) {
   if (radarChart) { radarChart.destroy(); radarChart = null; }
   const ctx = document.getElementById("radar-chart").getContext("2d");
   const labels = indicators.map(i => i.label.split(" ").slice(0,2).join(" "));
   const scores = indicators.map(i => i.score);
+
+  // Custom plugin to display large, highly visible score labels on each radar point
+  const scoreLabelsPlugin = {
+    id: "scoreLabels",
+    afterDraw(chart) {
+      const { ctx, data } = chart;
+      const meta = chart.getDatasetMeta(0);
+      const points = meta.data;
+
+      ctx.save();
+
+      points.forEach((point, i) => {
+        const score = data.datasets[0].data[i];
+        const color = getGradeColor(score);
+        const x = point.x;
+        const y = point.y - 20;
+        const text = `${score}`;
+
+        // Larger bold font
+        ctx.font = 'bold 15px "Inter", "Segoe UI", "Arial", sans-serif';
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        const metrics = ctx.measureText(text);
+        const padX = 10;
+        const padY = 6;
+        const bw = metrics.width + padX * 2;
+        const bh = 28;
+
+        // Drop shadow for the badge
+        ctx.shadowColor = "rgba(0,0,0,0.15)";
+        ctx.shadowBlur = 8;
+        ctx.shadowOffsetX = 1;
+        ctx.shadowOffsetY = 2;
+
+        // White opaque background
+        ctx.fillStyle = "rgba(255,255,255,0.98)";
+        ctx.beginPath();
+        const rx = 8;
+        const bx = x - bw / 2;
+        const by = y - bh;
+        ctx.moveTo(bx + rx, by);
+        ctx.lineTo(bx + bw - rx, by);
+        ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + rx);
+        ctx.lineTo(bx + bw, by + bh - rx);
+        ctx.quadraticCurveTo(bx + bw, by + bh, bx + bw - rx, by + bh);
+        ctx.lineTo(bx + rx, by + bh);
+        ctx.quadraticCurveTo(bx, by + bh, bx, by + bh - rx);
+        ctx.lineTo(bx, by + rx);
+        ctx.quadraticCurveTo(bx, by, bx + rx, by);
+        ctx.closePath();
+        ctx.fill();
+
+        // Reset shadow for border and text
+        ctx.shadowColor = "transparent";
+
+        // Thicker colored border
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // Score text with dark color for maximum contrast
+        ctx.fillStyle = color;
+        ctx.font = 'bold 15px "Inter", "Segoe UI", "Arial", sans-serif';
+        ctx.fillText(text, x, y - 4);
+      });
+
+      ctx.restore();
+    }
+  };
+
+  // Register plugin for this chart instance
+  Chart.register(scoreLabelsPlugin);
 
   radarChart = new Chart(ctx, {
     type: "radar",
@@ -290,7 +457,12 @@ function buildRadarChart(indicators) {
           ticks: { stepSize: 25, color: "rgba(107,114,128,0.4)", font: { size: 10 }, backdropColor: "transparent" },
           grid: { color: "rgba(59,130,246,0.1)" },
           angleLines: { color: "rgba(59,130,246,0.1)" },
-          pointLabels: { color: "#374151", font: { size: 11, family: "'Inter'", weight: "500" } }
+          pointLabels: {
+            color: "#111827",
+            font: { size: 12, family: "'Inter', 'Segoe UI', sans-serif", weight: "700" },
+            backdropColor: "rgba(255,255,255,0.6)",
+            backdropPadding: { top: 3, bottom: 3, left: 5, right: 5 }
+          }
         }
       },
       plugins: {

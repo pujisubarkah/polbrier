@@ -1,18 +1,27 @@
 /**
  * pdfParser.js
  * Ekstrak teks dari file PDF menggunakan pdfjs-dist (Mozilla PDF.js)
- * - Pure JavaScript, tidak perlu CMap filesystem — compatible dengan Vercel serverless
- * - Menggunakan dynamic import() untuk ES module dari pdfjs-dist
+ * - Menggunakan dynamic import() untuk ESM (.mjs) — compatible dengan Vercel serverless
+ * - pdfjs-dist v4.x hanya menyediakan file .mjs, sehingga require() tidak bisa digunakan
+ * - disableFontFace + useSystemFonts agar tidak perlu font files
+ * - Tidak perlu CMap filesystem — compatible dengan Vercel
  */
 
 let pdfjsLib = null;
 
 /**
- * Lazy-load pdfjs-dist (ESM) di runtime
+ * Lazy-load pdfjs-dist (ESM .mjs) di runtime via dynamic import()
+ * pdfjs-dist v4.x ke atas hanya menyediakan file .mjs (ESM), 
+ * bukan .js (CJS) — sehingga menggunakan import() sebagai ganti require().
  */
 async function getPdfjsLib() {
   if (!pdfjsLib) {
-    pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    // Dynamic import untuk ESM .mjs — compatible dengan Node.js 20+ dan Vercel
+    const module = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    pdfjsLib = module;
+    // Legacy build v4.x sudah include worker secara internal (tidak perlu workerSrc terpisah).
+    // Menghapus pengaturan workerSrc karena di pdfjs-dist v4.x hanya menerima tipe string.
+    // Lihat: https://github.com/nicbarker/clay/issues/14
   }
   return pdfjsLib;
 }
@@ -25,12 +34,20 @@ async function getPdfjsLib() {
 async function extractTextFromPDF(buffer) {
   try {
     const lib = await getPdfjsLib();
-    
-    // Konversi buffer ke Uint8Array (format yang dibutuhkan pdfjs-dist)
+
+    // Konversi buffer ke Uint8Array
     const data = new Uint8Array(buffer);
 
     // Load dokumen PDF
-    const pdfDoc = await lib.getDocument({ data }).promise;
+    // Gunakan disableFontFace + useSystemFonts agar Vercel tidak perlu font files
+    const pdfDoc = await lib.getDocument({
+      data,
+      useSystemFonts: true,
+      disableFontFace: true,
+      disableAutoFetch: true,
+      disableStream: true
+    }).promise;
+
     const totalPages = pdfDoc.numPages;
     const textPages = [];
 
@@ -38,7 +55,7 @@ async function extractTextFromPDF(buffer) {
     for (let i = 1; i <= totalPages; i++) {
       const page = await pdfDoc.getPage(i);
       const content = await page.getTextContent();
-      
+
       // Gabungkan item teks per halaman
       const pageText = content.items.map(item => item.str).join(" ");
       textPages.push(pageText);
@@ -46,13 +63,15 @@ async function extractTextFromPDF(buffer) {
 
     // Gabungkan semua halaman
     const fullText = textPages.join("\n\n");
-    
+
     if (!fullText || fullText.trim().length === 0) {
       throw new Error("Teks kosong setelah ekstraksi PDF.");
     }
 
     return fullText;
   } catch (err) {
+    console.error("PDF Parsing Error Details:", err);
+    console.error("Stack Trace:", err.stack);
     throw new Error("Gagal membaca file PDF: " + err.message);
   }
 }

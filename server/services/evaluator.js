@@ -1,15 +1,24 @@
 /**
  * evaluator.js
- * Penilaian Policy Brief berbasis Rubrik 8 Kriteria Resmi.
- * Setiap kriteria dinilai pada skala 1–4 sesuai deskriptor rubrik,
- * kemudian dikonversi ke skor 0–100.
+ * Penilaian Policy Brief berbasis Rubrik 8 Kriteria Resmi + Kompetensi.
  *
- * === PENDEKATAN ASPEK-BASED SCORING ===
- * Alih-alih menghitung frekuensi keyword mentah (yang menghasilkan skor
- * seragam untuk semua dokumen policy brief), kami menggunakan pendekatan
- * aspek-based: setiap kriteria memiliki 4-5 aspek spesifik yang diperiksa
- * kehadirannya secara independen. Makin banyak aspek terpenuhi, makin
- * tinggi level rubrik.
+ * === KERANGKA PENILAIAN ===
+ * Penilaian dilakukan pada dua level:
+ *   Level 1 — 8 Kriteria Rubrik (skor per kriteria, skala 1-4)
+ *   Level 2 — Kompetensi (aggregasi dari kriteria ke dimensi kompetensi)
+ *
+ * === DIMENSI KOMPETENSI ===
+ * A. KEMAMPUAN ANALISIS (Analytical Competency)
+ *    A1. Kompetensi Inti:
+ *        - Pengetahuan tentang substansi Kebijakan Publik
+ *        - Metode Riset
+ *        - Teknik dan Analisis Kebijakan
+ *    A2. Kompetensi Spesialis:
+ *        - Penyusunan Saran Kebijakan
+ *
+ * B. KOMPETENSI POLITIS (Political Competency)
+ *    B1. Kompetensi Inti:
+ *        - Regulasi dan Legislasi
  *
  * Konversi Skala:
  *   4 (Sangat Baik)       → 90–100  → mid: 95
@@ -17,6 +26,70 @@
  *   2 (Cukup Memuaskan)   → 70–79   → mid: 74
  *   1 (Kurang Memuaskan)  → <70     → mid: 60
  */
+
+// ============================================================
+// MAPPING 8 KRITERIA → DIMENSI KOMPETENSI
+// ============================================================
+// Setiap kriteria rubrik dipetakan ke satu atau lebih elemen
+// kompetensi agar hasil penilaian bisa di-aggregasi ke level
+// dimensi kompetensi.
+
+const COMPETENCY_FRAMEWORK = {
+  analytical_core: {
+    id: "analytical_core",
+    label: "Kemampuan Analisis — Kompetensi Inti",
+    shortLabel: "Analisis Inti",
+    description: "Pengetahuan substansi kebijakan publik, metode riset, teknik dan analisis kebijakan",
+    elements: [
+      {
+        id: "policy_knowledge",
+        label: "Pengetahuan Substansi Kebijakan Publik",
+        criteriaMap: ["pendahuluan", "deskripsi_masalah", "cover_page"],
+        description: "Kemampuan memahami dan menjelaskan isu kebijakan publik secara komprehensif"
+      },
+      {
+        id: "research_method",
+        label: "Metode Riset",
+        criteriaMap: ["deskripsi_masalah", "kompleksitas_kebaruan"],
+        description: "Kemampuan menggunakan data, bukti, dan metode riset dalam analisis"
+      },
+      {
+        id: "analytical_technique",
+        label: "Teknik dan Analisis Kebijakan",
+        criteriaMap: ["kompleksitas_kebaruan", "deskripsi_masalah", "pendahuluan"],
+        description: "Kemampuan menerapkan teknik analisis kebijakan secara tepat dan mendalam"
+      }
+    ]
+  },
+  analytical_specialist: {
+    id: "analytical_specialist",
+    label: "Kemampuan Analisis — Kompetensi Spesialis",
+    shortLabel: "Analisis Spesialis",
+    description: "Penyusunan saran kebijakan yang implementatif dan berbasis bukti",
+    elements: [
+      {
+        id: "policy_recommendation",
+        label: "Penyusunan Saran Kebijakan",
+        criteriaMap: ["rekomendasi", "ringkasan_eksekutif", "gaya_bahasa"],
+        description: "Kemampuan menyusun rekomendasi kebijakan yang persuasif, feasible, dan terstruktur"
+      }
+    ]
+  },
+  political_core: {
+    id: "political_core",
+    label: "Kompetensi Politis — Kompetensi Inti",
+    shortLabel: "Politis Inti",
+    description: "Pemahaman regulasi, legislasi, dan konteks politik kebijakan",
+    elements: [
+      {
+        id: "regulation_legislation",
+        label: "Regulasi dan Legislasi",
+        criteriaMap: ["kompleksitas_kebaruan", "pendahuluan", "rekomendasi"],
+        description: "Kemampuan mengaitkan analisis dengan kerangka regulasi dan legislasi yang berlaku"
+      }
+    ]
+  }
+};
 
 // ============================================================
 // KONFIGURASI 8 KRITERIA RUBRIK — ASPEK-BASED SCORING
@@ -35,7 +108,6 @@ const RUBRIC_CRITERIA = [
       2: "Desain kurang menarik dan cukup relevan dengan masalah kebijakan yang diangkat.",
       1: "Desain kurang menarik dan kurang relevan dengan masalah kebijakan yang diangkat."
     },
-    // Aspek-aspek spesifik yang diperiksa (masing-masing 0 atau 1)
     aspects: [
       {
         id: "cover_title_page",
@@ -164,7 +236,7 @@ const RUBRIC_CRITERIA = [
         id: "intro_section",
         label: "Bagian Pendahuluan",
         desc: "Ada header/indikasi bagian pendahuluan",
-        check: (text) => /\b(pendahuluan|latar\s?belakang|introduction|pendahuluan)\b/i.test(text)
+        check: (text) => /\b(pendahuluan|latar\s?belakang|introduction)\b/i.test(text)
       },
       {
         id: "intro_topic",
@@ -368,27 +440,17 @@ const RUBRIC_CRITERIA = [
         check: (text) => /\b(berbeda\s?dari|lebih\s?baik|dibandingkan|alternatif|perbandingan|perbedaan|kesamaan)\b/i.test(text)
       },
       {
-        id: "complex_depth",
-        label: "Kedalaman Analisis",
-        desc: "Menunjukkan analisis yang mendalam dengan istilah teknis",
-        check: (text) => {
-          // Cek keberadaan beberapa istilah analitis kebijakan
-          const terms = [
-            "regulasi", "legislasi", "desentralisasi", "governance", "tata\s?kelola",
-            "anggaran", "fiskal", "moneter", "subsidi", "insentif",
-            "efektivitas", "efisiensi", "produktivitas", "akuntabilitas", "transparansi",
-            "partisipasi", "inklusif", "berkelanjutan", "sustainable"
-          ];
-          const matched = terms.filter(t => new RegExp(`\\b${t}\\b`, 'i').test(text));
-          return matched.length >= 3;
-        }
+        id: "complex_regulation",
+        label: "Regulasi & Legislasi",
+        desc: "Mengaitkan analisis dengan kerangka regulasi",
+        check: (text) => /\b(regulasi|legislasi|peraturan|undang[-\s]?undang|uu|perda|kebijakan\s?(pemerintah|daerah)|legalitas|yuridis)\b/i.test(text)
       }
     ]
   }
 ];
 
 // ============================================================
-// KONVERSI LEVEL RUBRIK → SKOR 0-100
+// KONVERSI SKOR
 // ============================================================
 
 function rubricLevelToScore(level) {
@@ -409,29 +471,16 @@ function rubricLevelLabel(level) {
 }
 
 // ============================================================
-// ASPEK-BASED SCORING
+// ASPEK-BASED SCORING PER KRITERIA
 // ============================================================
 
-/**
- * Hitung skor rubrik (level 1-4) untuk satu kriteria berdasarkan
- * berapa banyak aspek yang terpenuhi dalam teks.
- *
- * Setiap kriteria memiliki 4-5 aspek spesifik (masing-masing 0/1).
- * Mapping:
- *   5/5 aspek → level 4
- *   3-4/5 aspek → level 3
- *   2/5 aspek → level 2
- *   0-1/5 aspek → level 1
- */
 function scoreCriteria(text, criteria) {
   const totalWords = text.split(/\s+/).filter(w => w.length > 0).length;
 
   if (!criteria.aspects || criteria.aspects.length === 0) {
-    // Fallback untuk kriteria tanpa aspek
     return 1;
   }
 
-  // Cek setiap aspek
   let fulfilledAspects = 0;
   criteria.aspects.forEach(aspect => {
     try {
@@ -444,41 +493,92 @@ function scoreCriteria(text, criteria) {
   });
 
   const totalAspects = criteria.aspects.length;
-
-  // Penalti untuk dokumen yang sangat pendek (< 300 kata)
-  // Dokumen pendek kemungkinan tidak memiliki konten yang memadai
   const shortDocPenalty = totalWords < 300 ? 1 : 0;
 
-  // Mapping ke level rubrik
   let level;
   const ratio = fulfilledAspects / totalAspects;
 
-  if (ratio >= 0.8) {
-    level = 4; // 80%+ aspek terpenuhi
-  } else if (ratio >= 0.6) {
-    level = 3; // 60-79%
-  } else if (ratio >= 0.4) {
-    level = 2; // 40-59%
-  } else {
-    level = 1; // < 40%
-  }
+  if (ratio >= 0.8) level = 4;
+  else if (ratio >= 0.6) level = 3;
+  else if (ratio >= 0.4) level = 2;
+  else level = 1;
 
-  // Terapkan penalti dokumen pendek
-  if (shortDocPenalty && level > 1) {
-    level = level - 1;
-  }
-
-  // Cover page: jika tidak ada teks yang cukup, beri level 2 maksimal
-  // karena penilaian visual tidak bisa dilakukan otomatis penuh
-  if (criteria.isVisualOnly && level > 3) {
-    level = 3;
-  }
+  if (shortDocPenalty && level > 1) level = level - 1;
+  if (criteria.isVisualOnly && level > 3) level = 3;
 
   return Math.max(1, Math.min(4, level));
 }
 
 // ============================================================
-// FEEDBACK BERBASIS LEVEL PER KRITERIA
+// KOMPETENSI SCORING (aggregasi dari kriteria)
+// ============================================================
+
+/**
+ * Hitung skor untuk setiap dimensi kompetensi berdasarkan
+ * skor kriteria yang sudah dihitung sebelumnya.
+ * 
+ * Setiap elemen kompetensi mengambil rata-rata dari kriteria
+ * yang dipetakan kepadanya.
+ */
+function scoreCompetencies(indicatorResults) {
+  const competencyResults = {};
+
+  for (const [compKey, competency] of Object.entries(COMPETENCY_FRAMEWORK)) {
+    const elementResults = competency.elements.map(element => {
+      // Ambil skor dari kriteria yang dipetakan
+      const mappedScores = element.criteriaMap
+        .map(criteriaId => indicatorResults.find(r => r.id === criteriaId))
+        .filter(r => r)
+        .map(r => r.score);
+
+      // Rata-rata skor kriteria untuk elemen ini
+      const avgScore = mappedScores.length > 0
+        ? Math.round(mappedScores.reduce((a, b) => a + b, 0) / mappedScores.length)
+        : 60;
+
+      const gradeInfo = scoreToGrade(avgScore);
+
+      return {
+        id: element.id,
+        label: element.label,
+        description: element.description,
+        score: avgScore,
+        grade: gradeInfo.grade,
+        gradeLabel: gradeInfo.label,
+        color: gradeInfo.color,
+        rubricLevel: gradeInfo.rubricLevel,
+        rubricLevelLabel: rubricLevelLabel(gradeInfo.rubricLevel),
+        mappedCriteria: element.criteriaMap
+      };
+    });
+
+    // Skor dimensi kompetensi = rata-rata dari skor elemen-elemennya
+    const dimAvgScore = elementResults.length > 0
+      ? Math.round(elementResults.reduce((a, b) => a + b.score, 0) / elementResults.length)
+      : 60;
+
+    const dimGradeInfo = scoreToGrade(dimAvgScore);
+
+    competencyResults[compKey] = {
+      id: competency.id,
+      label: competency.label,
+      shortLabel: competency.shortLabel,
+      description: competency.description,
+      score: dimAvgScore,
+      grade: dimGradeInfo.grade,
+      gradeLabel: dimGradeInfo.label,
+      color: dimGradeInfo.color,
+      rubricLevel: dimGradeInfo.rubricLevel,
+      rubricLevelLabel: rubricLevelLabel(dimGradeInfo.rubricLevel),
+      elements: elementResults
+    };
+  }
+
+  return competencyResults;
+}
+
+// ============================================================
+// FEEDBACK
 // ============================================================
 
 function generateFeedback(criteriaId, level) {
@@ -538,19 +638,71 @@ function generateFeedback(criteriaId, level) {
   return fb[level] || fb[1];
 }
 
+function generateCompetencySummary(competencyResults) {
+  const summaries = [];
+
+  for (const [key, comp] of Object.entries(competencyResults)) {
+    const strongest = [...comp.elements].sort((a, b) => b.score - a.score)[0];
+    const weakest = [...comp.elements].sort((a, b) => a.score - b.score)[0];
+
+    summaries.push({
+      competencyId: key,
+      competencyLabel: comp.label,
+      competencyScore: comp.score,
+      competencyGrade: comp.grade,
+      strongestElement: strongest ? { label: strongest.label, score: strongest.score } : null,
+      weakestElement: weakest ? { label: weakest.label, score: weakest.score } : null
+    });
+  }
+
+  return summaries;
+}
+
+function generateSummary(score, grade, competencyResults) {
+  const mainSummary = {
+    A: "Policy brief ini memenuhi standar kualitas yang sangat tinggi (Level 4 – Sangat Baik). Dokumen menunjukkan pemahaman mendalam terhadap semua elemen rubrik: cover yang menarik, ringkasan eksekutif lengkap, deskripsi masalah kuat, rekomendasi persuasif, dan kebaruan gagasan yang signifikan.",
+    B: "Policy brief ini berkualitas memuaskan (Level 3). Sebagian besar kriteria rubrik terpenuhi dengan baik. Masih ada ruang penyempurnaan terutama pada beberapa kriteria yang belum mencapai level tertinggi.",
+    C: "Policy brief ini cukup memadai (Level 2 – Cukup Memuaskan) namun memerlukan perbaikan pada beberapa aspek penting. Perhatikan kelengkapan ringkasan eksekutif, kekuatan deskripsi masalah, dan jumlah alternatif rekomendasi.",
+    D: "Policy brief ini kurang memenuhi standar rubrik (Level 1 – Kurang Memuaskan). Diperlukan revisi yang signifikan pada hampir semua kriteria, terutama problem statement, bukti pendukung, dan strategi rekomendasi yang feasible."
+  };
+
+  // Tambahkan insight kompetensi ke summary
+  let compInsight = " ";
+  if (competencyResults) {
+    const analisis = competencyResults.analytical_core;
+    const politis = competencyResults.political_core;
+    const spesialis = competencyResults.analytical_specialist;
+
+    if (analisis && politis) {
+      if (analisis.score >= politis.score) {
+        compInsight += "Kemampuan analisis lebih dominan dibandingkan kompetensi politis. ";
+      } else {
+        compInsight += "Kompetensi politis (pemahaman regulasi dan legislasi) lebih dominan dibandingkan kemampuan analisis. ";
+      }
+    }
+    if (spesialis && spesialis.score < 70) {
+      compInsight += "Penyusunan saran kebijakan perlu diperkuat agar lebih implementatif dan persuasif.";
+    }
+  }
+
+  return mainSummary[grade] + compInsight;
+}
+
 // ============================================================
 // FUNGSI EKSPOR UTAMA
 // ============================================================
 
 /**
  * Evaluasi teks policy brief berdasarkan 8 kriteria rubrik
+ * dan framework kompetensi.
+ * 
  * @param {string} text - Konten teks dokumen
- * @returns {object} - Hasil penilaian lengkap
+ * @returns {object} - Hasil penilaian lengkap dengan rubrik + kompetensi
  */
 function evaluatePolicyBrief(text) {
   const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
 
-  // Nilai tiap kriteria
+  // 1. Nilai tiap kriteria rubrik
   const indicatorResults = RUBRIC_CRITERIA.map(criteria => {
     const rubricLevel = scoreCriteria(text, criteria);
     const score = rubricLevelToScore(rubricLevel);
@@ -567,7 +719,6 @@ function evaluatePolicyBrief(text) {
       gradeLabel: gradeInfo.label,
       color: gradeInfo.color,
       feedback,
-      // Data rubrik lengkap
       rubricLevel,
       rubricLevelLabel: rubricLevelLabel(rubricLevel),
       rubricDescriptor: criteria.descriptors[rubricLevel],
@@ -581,7 +732,7 @@ function evaluatePolicyBrief(text) {
     };
   });
 
-  // Nilai akhir (rata-rata tertimbang)
+  // 2. Nilai akhir (rata-rata tertimbang dari 8 kriteria)
   let totalScore = 0;
   indicatorResults.forEach(r => { totalScore += r.score * r.weight; });
   const finalScore = Math.round(totalScore);
@@ -590,7 +741,11 @@ function evaluatePolicyBrief(text) {
   // Level rubrik akhir
   const avgLevel = Math.round(indicatorResults.reduce((sum, r) => sum + r.rubricLevel, 0) / indicatorResults.length);
 
-  // Kekuatan & kelemahan (berdasarkan rubric level)
+  // 3. Hitung kompetensi dari hasil kriteria
+  const competencyResults = scoreCompetencies(indicatorResults);
+  const competencySummary = generateCompetencySummary(competencyResults);
+
+  // 4. Kekuatan & kelemahan
   const sorted = [...indicatorResults].sort((a, b) => b.rubricLevel - a.rubricLevel);
   const strengths = sorted.slice(0, 2).map(r => `${r.label} (Level ${r.rubricLevel} – ${r.rubricLevelLabel})`);
   const weaknesses = sorted.slice(-2).reverse().map(r => `${r.label} (Level ${r.rubricLevel} – ${r.rubricLevelLabel})`);
@@ -598,6 +753,8 @@ function evaluatePolicyBrief(text) {
   return {
     wordCount,
     indicators: indicatorResults,
+    competencies: competencyResults,
+    competencySummary,
     finalScore,
     finalGrade: finalGradeInfo.grade,
     finalGradeLabel: finalGradeInfo.label,
@@ -606,18 +763,9 @@ function evaluatePolicyBrief(text) {
     finalRubricLevelLabel: rubricLevelLabel(avgLevel),
     strengths,
     weaknesses,
-    summary: generateSummary(finalScore, finalGradeInfo.grade)
+    summary: generateSummary(finalScore, finalGradeInfo.grade, competencyResults)
   };
-}
-
-function generateSummary(score, grade) {
-  const summaries = {
-    A: "Policy brief ini memenuhi standar kualitas yang sangat tinggi (Level 4 – Sangat Baik). Dokumen menunjukkan pemahaman mendalam terhadap semua elemen rubrik: cover yang menarik, ringkasan eksekutif lengkap, deskripsi masalah kuat, rekomendasi persuasif, dan kebaruan gagasan yang signifikan.",
-    B: "Policy brief ini berkualitas memuaskan (Level 3). Sebagian besar kriteria rubrik terpenuhi dengan baik. Masih ada ruang penyempurnaan terutama pada beberapa kriteria yang belum mencapai level tertinggi.",
-    C: "Policy brief ini cukup memadai (Level 2 – Cukup Memuaskan) namun memerlukan perbaikan pada beberapa aspek penting. Perhatikan kelengkapan ringkasan eksekutif, kekuatan deskripsi masalah, dan jumlah alternatif rekomendasi.",
-    D: "Policy brief ini kurang memenuhi standar rubrik (Level 1 – Kurang Memuaskan). Diperlukan revisi yang signifikan pada hampir semua kriteria, terutama problem statement, bukti pendukung, dan strategi rekomendasi yang feasible."
-  };
-  return summaries[grade] || "Tidak ada ringkasan tersedia.";
 }
 
 module.exports = { evaluatePolicyBrief };
+

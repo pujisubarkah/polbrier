@@ -1,4 +1,4 @@
-# TODO: Perbaikan Error Vercel + Upgrade PDF Parser
+an # TODO: Perbaikan Error Vercel + Upgrade PDF Parser
 
 ## ✅ Completed
 
@@ -37,16 +37,29 @@
 - Cover page dibatasi maksimal level 3 (karena penilaian visual butuh review manual)
 - Juga memperbaiki app.js label dari "5 indikator" → "8 kriteria rubrik"
 
-## 🔄 In Progress
+### Step 8 ✅ Fix Vercel Deployment Errors (original)
+- **package.json:** Hapus dependency `@supabase/supabase-js` yang tidak terpakai — mengurangi bundle size
+- **pdfParser.js:** Ganti dari dynamic ESM `import()` ke CJS `require()` — ESM import sering gagal di Vercel serverless. Tambah opsi `disableFontFace`, `useSystemFonts`, `disableAutoFetch`, `disableStream` untuk kompatibilitas serverless
+- **vercel.json:** Persempit `includeFiles` hanya ke file pdf.js & pdf.worker.js yang diperlukan
 
-### Step 8 🔄 Install dependencies (`npm install`)
-- Menunggu instalasi selesai
+### Step 9 ✅ Fix "Gagal Membaca File PDF" — pdfjs-dist v4.x ESM Compatibility
+- **Root Cause:** `pdfjs-dist` v4.10.38 hanya menyediakan file `.mjs` (ESM), bukan `.js` (CJS).  
+  File `pdfjs-dist/legacy/build/pdf.js` tidak ada → `require()` gagal.
+- **Fix pdfParser.js:** Ubah dari `require("pdfjs-dist/legacy/build/pdf.js")` menjadi  
+  `await import("pdfjs-dist/legacy/build/pdf.mjs")` — fungsi `getPdfjsLib()` sudah async.
+- **Fix workerSrc:** Hapus `GlobalWorkerOptions.workerSrc = false` karena di v4.x  
+  properti ini hanya menerima tipe `string`. Legacy build sudah include worker secara internal.
+- **Fix assess.js:** Perbaiki duplikasi conditional & struktur curly braces yang kacau  
+  (syntax error dari edit sebelumnya) — duplikasi `if (err.message.includes(...))` dan  
+  `if (errorMessage.includes(...))` diperbaiki menjadi satu blok if-else yang rapi.
+- **Tested ✅:** Server berjalan di `localhost:3000`, PDF parsing sukses mengekstrak teks  
+  "Hello World Policy Brief!" dari PDF minimal.
 
 ## ⬜ Not Yet Started
 
-### Step 9 ⬜ Test di lokal
-- Jalankan `node server/index.js` dan coba upload PDF
+### Step 10 ⬜ Test upload PDF asli via browser
+- Buka `http://localhost:3000` dan upload PDF policy brief asli
 
-### Step 10 ⬜ Deploy ke Vercel
+### Step 11 ⬜ Deploy ke Vercel
 - `vercel --prod` atau deploy via Vercel dashboard
 
