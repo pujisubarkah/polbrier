@@ -87,6 +87,14 @@ router.post("/", async (req, res) => {
       statusCode = 504;
       errorCode = "TIMEOUT";
       errorMessage = "Waktu analisis habis. Dokumen terlalu besar, coba file dengan ukuran lebih kecil.";
+    } else if (err.message && err.message.includes("Gagal memuat library PDF")) {
+      statusCode = 500;
+      errorCode = "PDF_LIBRARY_ERROR";
+      errorMessage = "Gagal memuat library PDF di server. Silakan hubungi administrator.";
+    } else if (err.message && err.message.includes("Cannot find module")) {
+      statusCode = 500;
+      errorCode = "MODULE_NOT_FOUND";
+      errorMessage = "Server kekurangan modul yang diperlukan. Silakan hubungi administrator.";
     }
 
     res.status(statusCode).json({

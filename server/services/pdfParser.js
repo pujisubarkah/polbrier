@@ -5,6 +5,9 @@
  * - pdfjs-dist v4.x hanya menyediakan file .mjs, sehingga require() tidak bisa digunakan
  * - disableFontFace + useSystemFonts agar tidak perlu font files
  * - Tidak perlu CMap filesystem — compatible dengan Vercel
+ * 
+ * IMPORTANT: pdfjs-dist v4.x legacy build sudah include worker built-in untuk Node.js.
+ * JANGAN set workerSrc karena akan menyebabkan error fetch worker dari path yang tidak ada.
  */
 
 let pdfjsLib = null;
@@ -13,15 +16,33 @@ let pdfjsLib = null;
  * Lazy-load pdfjs-dist (ESM .mjs) di runtime via dynamic import()
  * pdfjs-dist v4.x ke atas hanya menyediakan file .mjs (ESM), 
  * bukan .js (CJS) — sehingga menggunakan import() sebagai ganti require().
+ * 
+ * Fallback: Jika import ESM gagal (misal di Vercel), coba require CJS.
  */
 async function getPdfjsLib() {
   if (!pdfjsLib) {
-    // Dynamic import untuk ESM .mjs — compatible dengan Node.js 20+ dan Vercel
-    const module = await import("pdfjs-dist/legacy/build/pdf.mjs");
-    // Beri tahu Vercel di mana menemukan file worker yang sudah disalin.
-    // Path ini relatif terhadap root proyek saat runtime di Vercel.
-    module.GlobalWorkerOptions.workerSrc = "./api/lib/pdf.worker.mjs";
-    pdfjsLib = module;
+    try {
+      // Dynamic import untuk ESM .mjs — compatible dengan Node.js 20+ dan Vercel
+      const module = await import("pdfjs-dist/legacy/build/pdf.mjs");
+      // Legacy build v4.x sudah include worker built-in untuk Node.js.
+      // Tidak perlu set workerSrc — setting ini malah menyebabkan error
+      // karena mencoba fetch file worker yang tidak ada di Vercel.
+      pdfjsLib = module;
+    } catch (importErr) {
+      console.warn("ESM import gagal, mencoba CJS fallback:", importErr.message);
+      try {
+        // Fallback: Coba require CJS (untuk environment yang tidak support ESM)
+        const module = require("pdfjs-dist/legacy/build/pdf.js");
+        pdfjsLib = module;
+      } catch (requireErr) {
+        console.error("CJS fallback juga gagal:", requireErr.message);
+        throw new Error(
+          "Gagal memuat library PDF. " +
+          "Import ESM: " + importErr.message + ". " +
+          "CJS fallback: " + requireErr.message
+        );
+      }
+    }
   }
   return pdfjsLib;
 }
