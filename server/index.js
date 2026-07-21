@@ -14,6 +14,7 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Static files (frontend)
 app.use(express.static(path.join(__dirname, "../public")));
@@ -26,10 +27,40 @@ app.get("/*", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });
 
-// Mulai server
-app.listen(PORT, () => {
-  console.log(`\n🚀 Server berjalan di http://localhost:${PORT}`);
+// Mulai server (hanya jika bukan di Vercel serverless)
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log("\n\u{1F680} Server berjalan di http://localhost:" + PORT);
+  });
+}
+
+// ===== GLOBAL ERROR HANDLER =====
+// Pastikan semua error dikembalikan sebagai JSON, bukan HTML
+app.use((err, req, res, next) => {
+  console.error("Global error handler:", err);
+
+  // Handle multer errors (file too large, wrong type, etc.)
+  if (err.code === "LIMIT_FILE_SIZE") {
+    return res.status(413).json({
+      success: false,
+      error: "Ukuran file terlalu besar. Maksimal 20 MB."
+    });
+  }
+
+  if (err.message && err.message.includes("Hanya file PDF")) {
+    return res.status(400).json({
+      success: false,
+      error: err.message
+    });
+  }
+
+  // Default error response sebagai JSON
+  res.status(err.status || 500).json({
+    success: false,
+    error: err.message || "Terjadi kesalahan internal server."
+  });
 });
 
 // Ekspor aplikasi untuk Vercel
 module.exports = app;
+

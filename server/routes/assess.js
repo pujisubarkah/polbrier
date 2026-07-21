@@ -24,10 +24,24 @@ const upload = multer({
 });
 
 // POST /api/assess
-router.post("/", upload.single("file"), async (req, res) => {
+router.post("/", (req, res, next) => {
+  upload.single("file")(req, res, (err) => {
+    if (err) {
+      // Multer error (wrong file type, file too large, etc.)
+      return res.status(400).json({
+        success: false,
+        error: err.message || "Terjadi kesalahan saat mengunggah file."
+      });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: "Tidak ada file yang diunggah." });
+      return res.status(400).json({
+        success: false,
+        error: "Tidak ada file yang diunggah."
+      });
     }
 
     // 1. Ekstrak teks dari PDF
@@ -35,6 +49,7 @@ router.post("/", upload.single("file"), async (req, res) => {
 
     if (!text || text.trim().length < 50) {
       return res.status(400).json({
+        success: false,
         error: "Teks dalam PDF terlalu sedikit atau tidak dapat dibaca. Pastikan PDF bukan hasil scan gambar."
       });
     }
@@ -51,7 +66,10 @@ router.post("/", upload.single("file"), async (req, res) => {
 
   } catch (err) {
     console.error("Assessment error:", err);
-    res.status(500).json({ error: err.message || "Terjadi kesalahan saat menilai dokumen." });
+    res.status(500).json({
+      success: false,
+      error: err.message || "Terjadi kesalahan saat menilai dokumen."
+    });
   }
 });
 

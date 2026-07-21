@@ -122,8 +122,18 @@ async function runAssessment() {
 
   try {
     const response = await fetch("/api/assess", { method: "POST", body: formData });
-    const json = await response.json();
     clearInterval(stepTimer);
+
+    // Cek apakah response benar-benar JSON
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      // Jika bukan JSON, ambil teks HTML error
+      const htmlText = await response.text();
+      console.error("Server returned non-JSON response:", htmlText.substring(0, 200));
+      throw new Error("Server mengembalikan halaman error. Silakan coba lagi atau hubungi administrator.");
+    }
+
+    const json = await response.json();
     if (!response.ok || !json.success) throw new Error(json.error || "Terjadi kesalahan pada server.");
     loadingSec.classList.add("hidden");
     renderResult(json.data);
