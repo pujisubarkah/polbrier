@@ -68,9 +68,31 @@ router.post("/", async (req, res) => {
 
   } catch (err) {
     console.error("Assessment error:", err);
-    res.status(500).json({
+    console.error("Stack:", err.stack);
+
+    // Kategorikan error untuk pesan yang lebih informatif
+    let statusCode = 500;
+    let errorMessage = err.message || "Terjadi kesalahan saat menilai dokumen.";
+    let errorCode = "INTERNAL_ERROR";
+
+    if (err.message && err.message.includes("Gagal membaca file PDF")) {
+      statusCode = 400;
+      errorCode = "PDF_PARSE_ERROR";
+      errorMessage = "Gagal membaca file PDF. Pastikan file adalah PDF yang valid dan tidak rusak.";
+    } else if (err.message && err.message.includes("Teks kosong")) {
+      statusCode = 400;
+      errorCode = "EMPTY_TEXT";
+      errorMessage = "PDF tidak mengandung teks yang bisa diekstrak. Pastikan PDF bukan hasil scan gambar.";
+    } else if (err.message && err.message.includes("Timeout")) {
+      statusCode = 504;
+      errorCode = "TIMEOUT";
+      errorMessage = "Waktu analisis habis. Dokumen terlalu besar, coba file dengan ukuran lebih kecil.";
+    }
+
+    res.status(statusCode).json({
       success: false,
-      error: err.message || "Terjadi kesalahan saat menilai dokumen."
+      error: errorMessage,
+      errorCode: errorCode
     });
   }
 });

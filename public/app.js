@@ -1,6 +1,6 @@
 /**
  * app.js — Frontend Logic
- * PolBrief Assessor — Katadata Style
+ * PolBrief Assessor — 5 Indikator Keyword-Based
  */
 
 // ===== STATE =====
@@ -21,11 +21,9 @@ const errorSec   = document.getElementById("error-section");
 const errorMsg   = document.getElementById("error-msg");
 const resultSec  = document.getElementById("result-section");
 
-// ===== INIT: Animate hero grade bars =====
+// ===== INIT =====
 document.addEventListener("DOMContentLoaded", () => {
-  // Animate stat counters
   animateCounters();
-  // Animate grade bars after a short delay
   setTimeout(() => {
     document.querySelectorAll(".gb-fill").forEach(bar => {
       bar.style.width = bar.dataset.w || bar.style.getPropertyValue("--w");
@@ -50,10 +48,7 @@ function animateCounters() {
 }
 
 // ===== DRAG & DROP =====
-dropZone.addEventListener("dragover", e => {
-  e.preventDefault();
-  dropZone.classList.add("drag-over");
-});
+dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
 dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
 dropZone.addEventListener("drop", e => {
   e.preventDefault();
@@ -66,14 +61,8 @@ fileInput.addEventListener("change", () => {
 
 // ===== FILE HANDLER =====
 function handleFile(file) {
-  if (file.type !== "application/pdf") {
-    showError("Hanya file PDF yang diperbolehkan.");
-    return;
-  }
-  if (file.size > 20 * 1024 * 1024) {
-    showError("Ukuran file terlalu besar. Maksimal 20 MB.");
-    return;
-  }
+  if (file.type !== "application/pdf") { showError("Hanya file PDF yang diperbolehkan."); return; }
+  if (file.size > 20 * 1024 * 1024)   { showError("Ukuran file terlalu besar. Maksimal 20 MB."); return; }
   selectedFile = file;
   fileNameEl.textContent = file.name;
   fileSizeEl.textContent = formatFileSize(file.size);
@@ -102,7 +91,6 @@ async function runAssessment() {
   resultSec.classList.add("hidden");
   loadingSec.classList.remove("hidden");
 
-  // Step animation (5 steps with AI Detection)
   const steps = ["step-1","step-2","step-3","step-4","step-5"];
   let idx = 0;
   const stepTimer = setInterval(() => {
@@ -117,14 +105,8 @@ async function runAssessment() {
     } else clearInterval(stepTimer);
   }, 700);
 
-  // Baca file sebagai base64
   const fileBase64 = await fileToBase64(selectedFile);
-
-  const payload = {
-    fileBase64,
-    fileName: selectedFile.name,
-    fileSize: selectedFile.size
-  };
+  const payload = { fileBase64, fileName: selectedFile.name, fileSize: selectedFile.size };
 
   try {
     const response = await fetch("/api/assess", {
@@ -134,12 +116,11 @@ async function runAssessment() {
     });
     clearInterval(stepTimer);
 
-    // Cek apakah response benar-benar JSON
+    // Cek apakah response JSON
     const contentType = response.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
-      // Jika bukan JSON, ambil teks HTML error
       const htmlText = await response.text();
-      console.error("Server returned non-JSON response:", htmlText.substring(0, 200));
+      console.error("Server returned non-JSON:", htmlText.substring(0, 200));
       throw new Error("Server mengembalikan halaman error. Silakan coba lagi atau hubungi administrator.");
     }
 
@@ -149,8 +130,13 @@ async function runAssessment() {
     renderResult(json.data);
   } catch (err) {
     clearInterval(stepTimer);
+    steps.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.classList.remove("active"); el.classList.add("done"); el.textContent = "❌ " + el.textContent.replace(/^[^\s]+\s/, ""); }
+    });
     loadingSec.classList.add("hidden");
     showError(err.message || "Tidak dapat terhubung ke server.");
+    uploadSec.classList.remove("hidden");
   }
 }
 
@@ -173,7 +159,7 @@ function renderResult(data) {
   document.getElementById("final-grade-label").textContent = data.finalGradeLabel;
   document.getElementById("final-score-text").textContent  = `${data.finalScore}/100`;
 
-  // Scorecards
+  // Scorecards (5 indikator)
   const scorecardRow = document.getElementById("scorecard-row");
   scorecardRow.innerHTML = "";
   data.indicators.forEach(ind => {
@@ -203,13 +189,11 @@ function renderResult(data) {
     document.getElementById("ai-detection-score").style.color = ai.color;
     document.getElementById("ai-detection-badge").style.borderColor = ai.color;
 
-    // Progress bar (inverted: higher aiScore = more AI)
     const barFill = document.getElementById("ai-detection-bar-fill");
     barFill.style.width = `${100 - ai.aiScore}%`;
     barFill.style.background = ai.color;
     document.getElementById("ai-detection-percent").textContent = `${100 - ai.aiScore}% Human`;
 
-    // Metrics
     const metricsContainer = document.getElementById("ai-detection-metrics");
     metricsContainer.innerHTML = "";
     ai.metrics.forEach(m => {
@@ -221,13 +205,10 @@ function renderResult(data) {
           <span class="ai-metric-score" style="color:${getMetricColor(m.score)}">${m.score}/100</span>
         </div>
         <div class="ai-metric-bar-bg">
-          <div class="ai-metric-bar-fill" style="width:${m.score}%;background:${getMetricColor(m.score)}"></div>
-        </div>
+          <div class="ai-metric-bar-fill" style="width:0%;background:${getMetricColor(m.score)}"></div>
         <p class="ai-metric-desc">${m.description}</p>
       `;
       metricsContainer.appendChild(met);
-
-      // Animate bars
       setTimeout(() => {
         const fill = met.querySelector(".ai-metric-bar-fill");
         if (fill) fill.style.width = `${m.score}%`;
@@ -240,12 +221,8 @@ function renderResult(data) {
   const wkList  = document.getElementById("weaknesses-list");
   strList.innerHTML = "";
   wkList.innerHTML  = "";
-  data.strengths.forEach(s => {
-    const li = document.createElement("li"); li.textContent = s; strList.appendChild(li);
-  });
-  data.weaknesses.forEach(w => {
-    const li = document.createElement("li"); li.textContent = w; wkList.appendChild(li);
-  });
+  data.strengths.forEach(s => { const li = document.createElement("li"); li.textContent = s; strList.appendChild(li); });
+  data.weaknesses.forEach(w => { const li = document.createElement("li"); li.textContent = w; wkList.appendChild(li); });
 
   // Indicator detail list
   const indList = document.getElementById("indicator-list");
@@ -259,6 +236,7 @@ function renderResult(data) {
   setTimeout(() => resultSec.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
 }
 
+// ===== BUILD INDICATOR ITEM =====
 function buildIndicatorItem(ind) {
   const el = document.createElement("div");
   el.className = "indicator-item";
@@ -269,10 +247,8 @@ function buildIndicatorItem(ind) {
         <div class="grade-badge" style="background:${ind.color}">${ind.grade}</div>
         <span class="score-num">${ind.score}/100</span>
       </div>
-    </div>
     <div class="progress-bar-bg">
       <div class="progress-bar-fill" style="width:0%;background:${ind.color}"></div>
-    </div>
     <p class="indicator-feedback">${ind.feedback}</p>
   `;
   setTimeout(() => {
@@ -282,6 +258,7 @@ function buildIndicatorItem(ind) {
   return el;
 }
 
+// ===== RADAR CHART =====
 function buildRadarChart(indicators) {
   if (radarChart) { radarChart.destroy(); radarChart = null; }
   const ctx = document.getElementById("radar-chart").getContext("2d");
@@ -295,29 +272,36 @@ function buildRadarChart(indicators) {
       datasets: [{
         label: "Skor Kompetensi",
         data: scores,
-        backgroundColor: "rgba(37, 99, 235, 0.15)", // Biru lebih lembut
-        borderColor: "rgba(37, 99, 235, 0.8)",      // Biru lebih lembut
+        backgroundColor: "rgba(37, 99, 235, 0.15)",
+        borderColor: "rgba(37, 99, 235, 0.8)",
         pointBackgroundColor: scores.map(s => getGradeColor(s)),
         pointBorderColor: "#ffffff",
-        pointRadius: 6, pointHoverRadius: 8, borderWidth: 2.5
+        pointRadius: 6,
+        pointHoverRadius: 8,
+        borderWidth: 2.5
       }]
     },
     options: {
-      responsive: true, maintainAspectRatio: true,
+      responsive: true,
+      maintainAspectRatio: true,
       scales: {
         r: {
-          min: 0, max: 100, suggestedMin: 0, suggestedMax: 100,
-          ticks: { stepSize: 25, color: "rgba(107, 114, 128, 0.4)", font: { size: 10 }, backdropColor: "transparent" },
-          grid: { color: "rgba(59, 130, 246, 0.1)" },
-          angleLines: { color: "rgba(59, 130, 246, 0.1)" },
+          min: 0, max: 100,
+          ticks: { stepSize: 25, color: "rgba(107,114,128,0.4)", font: { size: 10 }, backdropColor: "transparent" },
+          grid: { color: "rgba(59,130,246,0.1)" },
+          angleLines: { color: "rgba(59,130,246,0.1)" },
           pointLabels: { color: "#374151", font: { size: 11, family: "'Inter'", weight: "500" } }
         }
       },
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: "#ffffff", borderColor: "rgba(0,0,0,0.1)", borderWidth: 1,
-          titleColor: "#1f2937", bodyColor: "#4b5563", padding: 12,
+          backgroundColor: "#ffffff",
+          borderColor: "rgba(0,0,0,0.1)",
+          borderWidth: 1,
+          titleColor: "#1f2937",
+          bodyColor: "#4b5563",
+          padding: 12,
           callbacks: { label: ctx => ` Skor: ${ctx.raw}/100` }
         }
       }
@@ -326,14 +310,10 @@ function buildRadarChart(indicators) {
 }
 
 // ===== HELPERS =====
-
-/**
- * Konversi File blob ke base64 string
- */
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
+    reader.onload  = () => resolve(reader.result);
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
@@ -348,7 +328,7 @@ function getMetricColor(score) {
 
 function getGradeColor(score) {
   if (score >= 85) return "#22c55e";
-  if (score >= 70) return "#3b82f6"; // Biru lebih solid
+  if (score >= 70) return "#3b82f6";
   if (score >= 55) return "#eab308";
   if (score >= 40) return "#f97316";
   return "#ef4444";
@@ -373,7 +353,7 @@ function resetApp() {
   loadingSec.classList.add("hidden");
 
   // Reset steps
-  const labels = ["📄 Membaca dokumen PDF","🔍 Mengekstrak teks konten","🤖 Deteksi konten AI","⚖️ Menilai 5 indikator","📊 Menyusun laporan akhir"];
+  const labels = ["📄 Membaca dokumen PDF","🔍 Mengekstrak teks konten","🤖 Deteksi konten AI","⚖️ Menilai 8 kriteria rubrik","📊 Menyusun laporan akhir"];
   ["step-1","step-2","step-3","step-4","step-5"].forEach((id, i) => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -381,7 +361,6 @@ function resetApp() {
     el.textContent = labels[i];
   });
 
-  // Hide AI detection card
   const aiCard = document.getElementById("ai-detection-card");
   if (aiCard) aiCard.classList.add("hidden");
 

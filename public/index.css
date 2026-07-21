@@ -690,7 +690,7 @@ a { text-decoration: none; color: inherit; }
 }
 .error-icon  { font-size: 2.5rem; }
 .error-title { font-size: 1.05rem; font-weight: 700; color: #ef4444; }
-.error-msg   { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; }
+
 .retry-btn {
   margin-top: 8px; padding: 11px 26px;
   background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.4);
