@@ -9,7 +9,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="index.css" />
+  <link rel="stylesheet" href="index.css?v=2" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
 </head>
 <body>
 
@@ -312,8 +315,9 @@
           <div class="loading-steps">
             <div class="step active" id="step-1">📄 Membaca dokumen PDF</div>
             <div class="step" id="step-2">🔍 Mengekstrak teks konten</div>
-            <div class="step" id="step-3">⚖️ Menilai 5 indikator</div>
-            <div class="step" id="step-4">📊 Menyusun laporan akhir</div>
+            <div class="step" id="step-3">🤖 Deteksi konten AI</div>
+            <div class="step" id="step-4">⚖️ Menilai 5 indikator</div>
+            <div class="step" id="step-5">📊 Menyusun laporan akhir</div>
           </div>
         </div>
       </div>
@@ -365,6 +369,40 @@
           <div>
             <div class="summary-heading">Kesimpulan Penilaian</div>
             <p id="result-summary" class="summary-text"></p>
+          </div>
+        </div>
+
+        <!-- AI Detection Card -->
+        <div id="ai-detection-card" class="ai-detection-card hidden">
+          <div class="ai-detection-header">
+            <div class="ai-detection-title-wrap">
+              <span class="ai-detection-icon">🤖</span>
+              <div>
+                <div class="ai-detection-title">AI Detection Analysis</div>
+                <div class="ai-detection-sub">Analisis statistik kemiripan dengan pola tulisan AI</div>
+              </div>
+            </div>
+            <div class="ai-detection-badge" id="ai-detection-badge">
+              <span id="ai-detection-score" class="ai-detection-score">0%</span>
+              <span id="ai-detection-label" class="ai-detection-label">—</span>
+            </div>
+          </div>
+          <div class="ai-detection-body">
+            <div class="ai-detection-bar-wrapper">
+              <div class="ai-detection-bar-label">
+                <span>Kemungkinan AI</span>
+                <span id="ai-detection-percent">0%</span>
+              </div>
+              <div class="ai-detection-bar-bg">
+                <div id="ai-detection-bar-fill" class="ai-detection-bar-fill" style="width:0%"></div>
+              </div>
+              <div class="ai-detection-bar-ticks">
+                <span>Human</span>
+                <span>Uncertain</span>
+                <span>AI</span>
+              </div>
+            </div>
+            <div class="ai-detection-metrics" id="ai-detection-metrics"></div>
           </div>
         </div>
 
@@ -433,6 +471,6 @@
     </div>
   </footer>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

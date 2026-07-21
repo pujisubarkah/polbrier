@@ -7,6 +7,7 @@
 const express = require("express");
 const { extractTextFromPDF } = require("../services/pdfParser");
 const { evaluatePolicyBrief } = require("../services/evaluator");
+const { detectAI } = require("../services/aiDetector");
 
 const router = express.Router();
 
@@ -54,6 +55,9 @@ router.post("/", async (req, res) => {
 
     // 2. Evaluasi teks
     const result = evaluatePolicyBrief(text);
+
+    // 2b. Deteksi AI
+    result.aiDetection = detectAI(text);
 
     // 3. Tambahkan metadata file
     result.fileName = fileName || "dokumen.pdf";

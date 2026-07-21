@@ -102,8 +102,8 @@ async function runAssessment() {
   resultSec.classList.add("hidden");
   loadingSec.classList.remove("hidden");
 
-  // Step animation
-  const steps = ["step-1","step-2","step-3","step-4"];
+  // Step animation (5 steps with AI Detection)
+  const steps = ["step-1","step-2","step-3","step-4","step-5"];
   let idx = 0;
   const stepTimer = setInterval(() => {
     if (idx > 0) {
@@ -115,7 +115,7 @@ async function runAssessment() {
       if (cur) cur.classList.add("active");
       idx++;
     } else clearInterval(stepTimer);
-  }, 900);
+  }, 700);
 
   // Baca file sebagai base64
   const fileBase64 = await fileToBase64(selectedFile);
@@ -190,6 +190,50 @@ function renderResult(data) {
 
   // Summary
   document.getElementById("result-summary").textContent = data.summary;
+
+  // ===== AI Detection =====
+  if (data.aiDetection) {
+    const ai = data.aiDetection;
+    const aiCard = document.getElementById("ai-detection-card");
+    aiCard.classList.remove("hidden");
+
+    document.getElementById("ai-detection-score").textContent = `${ai.aiScore}%`;
+    document.getElementById("ai-detection-label").textContent = ai.aiLabel;
+    document.getElementById("ai-detection-label").style.color = ai.color;
+    document.getElementById("ai-detection-score").style.color = ai.color;
+    document.getElementById("ai-detection-badge").style.borderColor = ai.color;
+
+    // Progress bar (inverted: higher aiScore = more AI)
+    const barFill = document.getElementById("ai-detection-bar-fill");
+    barFill.style.width = `${100 - ai.aiScore}%`;
+    barFill.style.background = ai.color;
+    document.getElementById("ai-detection-percent").textContent = `${100 - ai.aiScore}% Human`;
+
+    // Metrics
+    const metricsContainer = document.getElementById("ai-detection-metrics");
+    metricsContainer.innerHTML = "";
+    ai.metrics.forEach(m => {
+      const met = document.createElement("div");
+      met.className = "ai-metric";
+      met.innerHTML = `
+        <div class="ai-metric-header">
+          <span class="ai-metric-name">${m.label}</span>
+          <span class="ai-metric-score" style="color:${getMetricColor(m.score)}">${m.score}/100</span>
+        </div>
+        <div class="ai-metric-bar-bg">
+          <div class="ai-metric-bar-fill" style="width:${m.score}%;background:${getMetricColor(m.score)}"></div>
+        </div>
+        <p class="ai-metric-desc">${m.description}</p>
+      `;
+      metricsContainer.appendChild(met);
+
+      // Animate bars
+      setTimeout(() => {
+        const fill = met.querySelector(".ai-metric-bar-fill");
+        if (fill) fill.style.width = `${m.score}%`;
+      }, 200);
+    });
+  }
 
   // Strengths & Weaknesses
   const strList = document.getElementById("strengths-list");
@@ -295,6 +339,13 @@ function fileToBase64(file) {
   });
 }
 
+function getMetricColor(score) {
+  if (score >= 70) return "#22c55e";
+  if (score >= 50) return "#38bdf8";
+  if (score >= 30) return "#eab308";
+  return "#ef4444";
+}
+
 function getGradeColor(score) {
   if (score >= 85) return "#22c55e";
   if (score >= 70) return "#3b82f6"; // Biru lebih solid
@@ -322,13 +373,17 @@ function resetApp() {
   loadingSec.classList.add("hidden");
 
   // Reset steps
-  const labels = ["📄 Membaca dokumen PDF","🔍 Mengekstrak teks konten","⚖️ Menilai 5 indikator","📊 Menyusun laporan akhir"];
-  ["step-1","step-2","step-3","step-4"].forEach((id, i) => {
+  const labels = ["📄 Membaca dokumen PDF","🔍 Mengekstrak teks konten","🤖 Deteksi konten AI","⚖️ Menilai 5 indikator","📊 Menyusun laporan akhir"];
+  ["step-1","step-2","step-3","step-4","step-5"].forEach((id, i) => {
     const el = document.getElementById(id);
     if (!el) return;
     el.className = "step" + (i === 0 ? " active" : "");
     el.textContent = labels[i];
   });
+
+  // Hide AI detection card
+  const aiCard = document.getElementById("ai-detection-card");
+  if (aiCard) aiCard.classList.add("hidden");
 
   if (radarChart) { radarChart.destroy(); radarChart = null; }
   window.scrollTo({ top: 0, behavior: "smooth" });
