@@ -1,13 +1,18 @@
-# Todo List - Vercel JSON Error Fix
+# TODO: Perbaikan Error "Unexpected token" di Vercel
 
-## Steps
+## Root Cause
+`multer` tidak kompatibel dengan lingkungan serverless Vercel karena Vercel sudah mengonsumsi raw request body sebelum Express/multer memprosesnya. Akibatnya, `multer` gagal memparse `multipart/form-data` dan Express mengembalikan HTML error page (bukan JSON), sehingga frontend gagal parse sebagai JSON.
 
-- [X] ✅ Read all files and understand the problem
-- [X] ✅ Plan approved by user
-- [X] 1. **package.json** - Downgrade express ^5.2.1 → ^4.21.2, multer ^2.2.0 → ^1.4.5-lts.2
-- [X] 2. **server/index.js** - Remove unconditional app.listen(), add Vercel conditional, add global error handler
-- [X] 3. **server/routes/assess.js** - Better error handling (always return JSON)
-- [X] 4. **public/app.js** - Check content-type before parsing JSON response
-- [X] 5. Install dependencies with `npm install`
-- [X] 6. Test locally ✅
+## Rencana Perbaikan
+Alihkan dari `multer` (upload file via `multipart/form-data`) ke pendekatan **base64 JSON** yang kompatibel dengan serverless.
+
+### Steps
+
+- [x] **Step 1**: Hapus dependensi `multer` dari `package.json`
+- [x] **Step 2**: Update `server/index.js` — perbesar limit JSON body (50MB) untuk tampung base64 file
+- [x] **Step 3**: Update `server/routes/assess.js` — ubah dari multer multipart ke penerimaan JSON base64
+- [x] **Step 4**: Update `public/app.js` — ubah dari FormData ke base64 JSON POST + tambah helper `fileToBase64`
+- [x] **Step 5**: Update `vercel.json` — pastikan konfigurasi mendukung body besar
+- [x] **Step 6**: Hapus `node_modules` dan re-install dependencies (multer otomatis terhapus)
+- [x] **Step 7**: Test hasil perubahan — server berjalan normal di port 3000
 

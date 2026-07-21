@@ -1,51 +1,49 @@
 /**
  * assess.js
- * Route POST /api/assess — terima PDF, nilai, kembalikan hasil JSON
+ * Route POST /api/assess — terima base64 PDF via JSON, nilai, kembalikan hasil JSON
+ * Tidak menggunakan multer agar kompatibel dengan Vercel serverless.
  */
 
 const express = require("express");
-const multer = require("multer");
 const { extractTextFromPDF } = require("../services/pdfParser");
 const { evaluatePolicyBrief } = require("../services/evaluator");
 
 const router = express.Router();
 
-// Konfigurasi multer — simpan di memory
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024 }, // maks 20 MB
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype === "application/pdf") {
-      cb(null, true);
-    } else {
-      cb(new Error("Hanya file PDF yang diperbolehkan"));
-    }
-  }
-});
-
 // POST /api/assess
-router.post("/", (req, res, next) => {
-  upload.single("file")(req, res, (err) => {
-    if (err) {
-      // Multer error (wrong file type, file too large, etc.)
-      return res.status(400).json({
-        success: false,
-        error: err.message || "Terjadi kesalahan saat mengunggah file."
-      });
-    }
-    next();
-  });
-}, async (req, res) => {
+router.post("/", async (req, res) => {
   try {
-    if (!req.file) {
+    const { fileBase64, fileName, fileSize } = req.body;
+
+    if (!fileBase64) {
       return res.status(400).json({
         success: false,
         error: "Tidak ada file yang diunggah."
       });
     }
 
+    // Validasi prefix base64 PDF
+    if (!fileBase64.startsWith("data:application/pdf;base64,")) {
+      return res.status(400).json({
+        success: false,
+        error: "Format file tidak valid. Hanya file PDF yang diperbolehkan."
+      });
+    }
+
+    // Decode base64 ke Buffer
+    const base64Data = fileBase64.replace(/^data:application\/pdf;base64,/, "");
+    const buffer = Buffer.from(base64Data, "base64");
+
+    // Validasi ukuran (maks 20 MB)
+    if (buffer.length > 20 * 1024 * 1024) {
+      return res.status(413).json({
+        success: false,
+        error: "Ukuran file terlalu besar. Maksimal 20 MB."
+      });
+    }
+
     // 1. Ekstrak teks dari PDF
-    const text = await extractTextFromPDF(req.file.buffer);
+    const text = await extractTextFromPDF(buffer);
 
     if (!text || text.trim().length < 50) {
       return res.status(400).json({
@@ -58,8 +56,8 @@ router.post("/", (req, res, next) => {
     const result = evaluatePolicyBrief(text);
 
     // 3. Tambahkan metadata file
-    result.fileName = req.file.originalname;
-    result.fileSize = req.file.size;
+    result.fileName = fileName || "dokumen.pdf";
+    result.fileSize = fileSize || buffer.length;
     result.assessedAt = new Date().toISOString();
 
     res.json({ success: true, data: result });

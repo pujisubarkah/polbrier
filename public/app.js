@@ -117,11 +117,21 @@ async function runAssessment() {
     } else clearInterval(stepTimer);
   }, 900);
 
-  const formData = new FormData();
-  formData.append("file", selectedFile);
+  // Baca file sebagai base64
+  const fileBase64 = await fileToBase64(selectedFile);
+
+  const payload = {
+    fileBase64,
+    fileName: selectedFile.name,
+    fileSize: selectedFile.size
+  };
 
   try {
-    const response = await fetch("/api/assess", { method: "POST", body: formData });
+    const response = await fetch("/api/assess", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
     clearInterval(stepTimer);
 
     // Cek apakah response benar-benar JSON
@@ -272,6 +282,19 @@ function buildRadarChart(indicators) {
 }
 
 // ===== HELPERS =====
+
+/**
+ * Konversi File blob ke base64 string
+ */
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 function getGradeColor(score) {
   if (score >= 85) return "#22c55e";
   if (score >= 70) return "#3b82f6"; // Biru lebih solid
