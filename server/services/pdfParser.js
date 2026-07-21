@@ -18,10 +18,10 @@ async function getPdfjsLib() {
   if (!pdfjsLib) {
     // Dynamic import untuk ESM .mjs — compatible dengan Node.js 20+ dan Vercel
     const module = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    // Beri tahu Vercel di mana menemukan file worker yang sudah disalin.
+    // Path ini relatif terhadap root proyek saat runtime di Vercel.
+    module.GlobalWorkerOptions.workerSrc = "./api/lib/pdf.worker.mjs";
     pdfjsLib = module;
-    // Legacy build v4.x sudah include worker secara internal (tidak perlu workerSrc terpisah).
-    // Menghapus pengaturan workerSrc karena di pdfjs-dist v4.x hanya menerima tipe string.
-    // Lihat: https://github.com/nicbarker/clay/issues/14
   }
   return pdfjsLib;
 }
